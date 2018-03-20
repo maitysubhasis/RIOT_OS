@@ -21,6 +21,7 @@
 #define NET_IPV4_H
 
 #include "net/ipv4/addr.h"
+#include "net/ipv4/hdr.h"
 
 #ifdef __cplusplus
 extern "C" {

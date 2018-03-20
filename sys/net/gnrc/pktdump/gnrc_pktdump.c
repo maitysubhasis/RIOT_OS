@@ -145,6 +145,10 @@ static void *_eventloop(void *arg)
             case GNRC_NETAPI_MSG_TYPE_RCV:
                 puts("PKTDUMP: data received:");
                 _dump(msg.content.ptr);
+                
+                // su:
+                puts(msg.content.ptr);
+                
                 break;
             case GNRC_NETAPI_MSG_TYPE_SND:
                 puts("PKTDUMP: data to send:");

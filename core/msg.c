@@ -89,6 +89,9 @@ static int _msg_send(msg_t *m, kernel_pid_t target_pid, bool block, unsigned sta
 
     thread_t *target = (thread_t*) sched_threads[target_pid];
 
+    // su: 
+    // printf("\nMessage pid: %d\n", target->pid);
+
     m->sender_pid = sched_active_pid;
 
     if (target == NULL) {

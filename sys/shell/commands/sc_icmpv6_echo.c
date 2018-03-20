@@ -149,7 +149,9 @@ static void _print_stats(char *addr_str, int success, int count, uint64_t total_
 
 int _icmpv6_ping(int argc, char **argv)
 {
-    int count = 3, success = 0, remaining, stat_interval = 0, stat_counter = 0;
+    // su: default 
+    // count = 3
+    int count = 1, success = 0, remaining, stat_interval = 0, stat_counter = 0;
     size_t payload_len = 4;
     uint32_t delay = 1 * MS_PER_SEC;
     char *addr_str;

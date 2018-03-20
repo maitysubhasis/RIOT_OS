@@ -25,7 +25,7 @@
 #include "thread.h"
 #include "irq.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 #include "bitarithm.h"
 #include "sched.h"

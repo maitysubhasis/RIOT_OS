@@ -81,6 +81,8 @@ kernel_pid_t gnrc_ipv6_init(void)
         gnrc_ipv6_pid = thread_create(_stack, sizeof(_stack), GNRC_IPV6_PRIO,
                                       THREAD_CREATE_STACKTEST,
                                       _event_loop, NULL, "ipv6");
+        // su: 
+        printf("\nIPv6 pid: %d\n", gnrc_ipv6_pid);
     }
 
 #ifdef MODULE_FIB
@@ -262,9 +264,10 @@ static void *_event_loop(void *args)
 
     /* start event loop */
     while (1) {
-        DEBUG("ipv6: waiting for incoming message.\n");
         msg_receive(&msg);
 
+        // su: 
+        // printf("\nReceived message at IPv6 layer.\n");
         switch (msg.type) {
             case GNRC_NETAPI_MSG_TYPE_RCV:
                 DEBUG("ipv6: GNRC_NETAPI_MSG_TYPE_RCV received\n");
@@ -276,7 +279,6 @@ static void *_event_loop(void *args)
                 _send(msg.content.ptr, true);
                 break;
 
-            case GNRC_NETAPI_MSG_TYPE_GET:
             case GNRC_NETAPI_MSG_TYPE_SET:
                 DEBUG("ipv6: reply to unsupported get/set\n");
                 reply.content.value = -ENOTSUP;
@@ -605,6 +607,8 @@ static void _send(gnrc_pktsnip_t *pkt, bool prep_hdr)
     payload = ipv6->next;
 
     if (ipv6_addr_is_multicast(&hdr->dst)) {
+        DEBUG("su -> ipv6: got multicast ipv6 address (dst = %s)\n",
+          ipv6_addr_to_str(addr_str, &(hdr->dst), sizeof(addr_str)));
         _send_multicast(netif, pkt, ipv6, payload, prep_hdr);
     }
     else {
@@ -668,7 +672,7 @@ static void _send(gnrc_pktsnip_t *pkt, bool prep_hdr)
                     return;
                 }
             }
-
+            DEBUG("su -> ipv6: sending unicast.");
             _send_unicast(netif, nce.l2addr,
                           nce.l2addr_len, pkt);
         }
@@ -890,7 +894,7 @@ static void _decapsulate(gnrc_pktsnip_t *pkt)
     }
 
     pkt->type = GNRC_NETTYPE_IPV6;
-
+    
     _receive(pkt);
 }
 

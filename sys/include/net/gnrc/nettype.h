@@ -11,7 +11,7 @@
  * @ingroup     net_gnrc
  * @brief       Protocol type definitions and helper functions
  *
- * The protocol types are used with the @ref net_gnrc_netapi, the @ref net_gnrc_netif,
+ * The protocol types are used with the @ref net_gnrc_netapi, the @ref net_gnrc_netdev,
  * the @ref net_gnrc_netreg, and the @ref net_gnrc_pkt to identify network protocols
  * throughout the network stack.
  *
@@ -60,17 +60,6 @@ typedef enum {
      * @{
      * @name Link layer
      */
-#ifdef MODULE_GNRC_GOMACH
-    GNRC_NETTYPE_GOMACH,         /**< Protocol is GoMacH */
-#endif
-    /**
-     * @}
-     */
-
-    /**
-     * @{
-     * @name Link layer
-     */
 #ifdef MODULE_GNRC_LWMAC
     GNRC_NETTYPE_LWMAC,          /**< Protocol is lwMAC */
 #endif
@@ -82,11 +71,17 @@ typedef enum {
      * @{
      * @name Network layer
      */
+#ifdef MODULE_GNRC_IPV4
+    GNRC_NETTYPE_IPV4,          /**< Protocol is IPv4 */
+#endif
 #ifdef MODULE_GNRC_IPV6
     GNRC_NETTYPE_IPV6,          /**< Protocol is IPv6 */
 #endif
 #ifdef MODULE_GNRC_IPV6_EXT
     GNRC_NETTYPE_IPV6_EXT,      /**< Protocol is IPv6 extension header */
+#endif
+#ifdef MODULE_GNRC_ICMPV4
+    GNRC_NETTYPE_ICMPV4,        /**< Protocol is ICMPv4 */
 #endif
 #ifdef MODULE_GNRC_ICMPV6
     GNRC_NETTYPE_ICMPV6,        /**< Protocol is ICMPv6 */
@@ -147,6 +142,10 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
         case ETHERTYPE_IPV6:
             return GNRC_NETTYPE_IPV6;
 #endif
+#ifdef MODULE_GNRC_IPV4
+        case ETHERTYPE_IPV4:
+            return GNRC_NETTYPE_IPV4;
+#endif
 #ifdef MODULE_CCN_LITE
         case ETHERTYPE_NDN:
             return GNRC_NETTYPE_CCN;
@@ -174,6 +173,10 @@ static inline uint16_t gnrc_nettype_to_ethertype(gnrc_nettype_t type)
         case GNRC_NETTYPE_IPV6:
             return ETHERTYPE_IPV6;
 #endif
+#ifdef MODULE_GNRC_IPV4
+        case GNRC_NETTYPE_IPV4:
+            return ETHERTYPE_IPV4;
+#endif
 #ifdef MODULE_CCN_LITE
         case GNRC_NETTYPE_CCN:
             return ETHERTYPE_NDN;
@@ -197,9 +200,17 @@ static inline uint16_t gnrc_nettype_to_ethertype(gnrc_nettype_t type)
 static inline gnrc_nettype_t gnrc_nettype_from_protnum(uint8_t num)
 {
     switch (num) {
+#ifdef MODULE_GNRC_ICMPV4
+        case PROTNUM_ICMPV4:
+            return GNRC_NETTYPE_ICMPV4;
+#endif
 #ifdef MODULE_GNRC_ICMPV6
         case PROTNUM_ICMPV6:
             return GNRC_NETTYPE_ICMPV6;
+#endif
+#ifdef MODULE_GNRC_IPV4
+        case PROTNUM_IPV4:
+            return GNRC_NETTYPE_IPV4;
 #endif
 #ifdef MODULE_GNRC_IPV6
         case PROTNUM_IPV6:
@@ -242,9 +253,17 @@ static inline gnrc_nettype_t gnrc_nettype_from_protnum(uint8_t num)
 static inline uint8_t gnrc_nettype_to_protnum(gnrc_nettype_t type)
 {
     switch (type) {
+#ifdef MODULE_GNRC_ICMPV4
+        case GNRC_NETTYPE_ICMPV4:
+            return PROTNUM_ICMPV4;
+#endif
 #ifdef MODULE_GNRC_ICMPV6
         case GNRC_NETTYPE_ICMPV6:
             return PROTNUM_ICMPV6;
+#endif
+#ifdef MODULE_GNRC_IPV4
+        case GNRC_NETTYPE_IPV4:
+            return PROTNUM_IPV4;
 #endif
 #ifdef MODULE_GNRC_IPV6
         case GNRC_NETTYPE_IPV6:

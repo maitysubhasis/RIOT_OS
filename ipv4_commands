@@ -1,0 +1,6 @@
+sudo tuntap -u root
+sudo ifconfig tap0 up
+sudo ip a a 192.168.1.10/24 dev tap0
+
+udp server start 8808
+nc -6uv  fe80::708e:1dff:fe18:d626%tap0 8808 

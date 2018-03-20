@@ -1339,7 +1339,6 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
         switch (event) {
             case NETDEV_EVENT_RX_COMPLETE: {
                     gnrc_pktsnip_t *pkt = netif->ops->recv(netif);
-
                     if (pkt) {
                         _pass_on_packet(pkt);
                     }
