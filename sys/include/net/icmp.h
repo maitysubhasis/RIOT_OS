@@ -50,8 +50,8 @@ extern "C" {
 #define ICMP_TSR (14)    /* timestamp reply */
 #define ICMP_IRQ (15)    /* information request */
 #define ICMP_IR  (16)    /* information reply */
-#define ICMP_ADDRESS		17	/* Address Mask Request		*/
-#define ICMP_ADDRESSREPLY	18	/* Address Mask Reply		*/
+#define ICMP_ADDRESS		(17)	/* Address Mask Request		*/
+#define ICMP_ADDRESSREPLY	(18)	/* Address Mask Reply		*/
 /**
  * @}
  */
@@ -133,6 +133,21 @@ extern "C" {
 /**
  * @}
  */
+
+
+
+/**
+ * @brief   General ICMPv4 message format.
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol">
+ *          Header Format
+ *      </a>
+ */
+typedef struct __attribute__((packed)) {
+    uint8_t type;           /**< message type */
+    uint8_t code;           /**< message code */
+    network_uint16_t csum;  /**< checksum */
+} icmpv6_hdr_t;
 
 
 
