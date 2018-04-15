@@ -121,6 +121,26 @@ int gnrc_netif_get_from_netdev(gnrc_netif_t *netif, gnrc_netapi_opt_t *opt)
                     break;
             }
             break;
+
+#ifdef MODULE_GNRC_IPV4
+        case NETOPT_IPV4_ADDR: {
+                assert(opt->data_len >= sizeof(ipv4_addr_t));
+                ipv4_addr_t *tgt = opt->data;
+
+                res = 0;
+                memcpy(tgt, &netif->ipv4.addr, sizeof(ipv4_addr_t));
+                res += sizeof(ipv4_addr_t);
+                // for (unsigned i = 0;
+                //      (res < (int)opt->data_len) && (i < GNRC_NETIF_IPV4_ADDRS_NUMOF);
+                //      i++) {
+                //     // if (netif->ipv4.addrs_flags[i] != 0) {
+                //     tgt++;
+                //     // }
+                // }
+            }
+            break;
+#endif
+
 #ifdef MODULE_GNRC_IPV6
         case NETOPT_IPV6_ADDR: {
                 assert(opt->data_len >= sizeof(ipv6_addr_t));
@@ -229,6 +249,26 @@ int gnrc_netif_set_from_netdev(gnrc_netif_t *netif,
             netif->cur_hl = *((uint8_t *)opt->data);
             res = sizeof(uint8_t);
             break;
+#ifdef MODULE_GNRC_IPV4
+        case NETOPT_IPV4_ADDR: {
+                printf("\nsetting ipv4 address\n");
+                assert(opt->data_len == sizeof(ipv4_addr_t));
+                // /* always assume manually added */
+                // // uint8_t flags = ((((uint8_t)opt->context & 0xff) &
+                // //                   ~GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_MASK) |
+                // //                  GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
+                uint8_t pfx_len = (uint8_t)(opt->context);
+                printf("%d", opt->context);
+                /* acquire locks a recursive mutex so we are safe calling this
+                   public function */
+                res = gnrc_netif_ipv4_addr_add_internal(netif, opt->data,
+                                                        pfx_len);
+                if (res >= 0) {
+                    res = sizeof(ipv4_addr_t);
+                }
+            }
+            break;
+#endif
 #ifdef MODULE_GNRC_IPV6
         case NETOPT_IPV6_ADDR: {
                 assert(opt->data_len == sizeof(ipv6_addr_t));
@@ -446,6 +486,44 @@ void gnrc_netif_release(gnrc_netif_t *netif)
     }
 }
 
+#ifdef MODULE_GNRC_IPV4
+// static char addr_str_ipv4[IPV4_ADDR_MAX_STR_LEN];
+
+// static unsigned _match_ipv4(const gnrc_netif_t *netif, const ipv4_addr_t *addr,
+//                        const uint8_t *filter)
+// {
+//     bool matched = 0;
+//     if (filter == NULL) {
+//         // cheack all 32 bits
+//         matched = ipv4_addr_equal(&(netif->ipv4.addr), addr);
+//     }
+//     return matched;
+// }
+
+int gnrc_netif_ipv4_addr_add_internal(gnrc_netif_t *netif,
+                                      const ipv4_addr_t *addr,
+                                      unsigned pfx_len)
+{
+    if (ipv4_addr_equal(&(netif->ipv4.addr), addr)) {
+        gnrc_netif_release(netif);
+        return 0;
+    }
+    gnrc_netif_acquire(netif);
+    memcpy(&(netif->ipv4.addr), addr, sizeof(netif->ipv4.addr));
+    // save the prefix length
+    (void)pfx_len;
+    gnrc_netif_release(netif);
+    return 0;
+}
+
+// void gnrc_netif_ipv4_addr_remove_internal(gnrc_netif_t *netif)
+// {
+//     gnrc_netif_acquire(netif);
+
+//     gnrc_netif_release(netif);
+// }
+#endif
+
 #ifdef MODULE_GNRC_IPV6
 static inline bool _addr_anycast(const gnrc_netif_t *netif, unsigned idx);
 static int _addr_idx(const gnrc_netif_t *netif, const ipv6_addr_t *addr);
@@ -556,6 +634,7 @@ int gnrc_netif_ipv6_addr_add_internal(gnrc_netif_t *netif,
         return -ENOMEM;
     }
     netif->ipv6.addrs_flags[idx] = flags;
+    // 
     memcpy(&netif->ipv6.addrs[idx], addr, sizeof(netif->ipv6.addrs[idx]));
 #ifdef MODULE_GNRC_IPV6_NIB
 #if GNRC_IPV6_NIB_CONF_ARSM
@@ -1187,6 +1266,9 @@ static void _init_from_device(gnrc_netif_t *netif)
 #endif  /* MODULE_NETDEV_IEEE802154 */
 #ifdef MODULE_NETDEV_ETH
         case NETDEV_TYPE_ETHERNET:
+#ifdef MODULE_GNRC_IPV4
+            netif->ipv4.mtu = ETHERNET_DATA_LEN;
+#endif
 #ifdef MODULE_GNRC_IPV6
             netif->ipv6.mtu = ETHERNET_DATA_LEN;
 #endif

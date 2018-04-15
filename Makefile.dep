@@ -201,10 +201,16 @@ ifneq (,$(filter gnrc_sixlowpan_ctx,$(USEMODULE)))
   USEMODULE += xtimer
 endif
 
+ifneq (,$(filter gnrc_ipv4,$(USEMODULE)))
+  USEMODULE += ipv4_addr
+  USEMODULE += gnrc_netif
+endif
+
 ifneq (,$(filter gnrc_ipv6_default,$(USEMODULE)))
   USEMODULE += gnrc_ipv6
   USEMODULE += gnrc_icmpv6
 endif
+
 
 ifneq (,$(filter gnrc_ipv6_router_default,$(USEMODULE)))
   USEMODULE += gnrc_ipv6_router

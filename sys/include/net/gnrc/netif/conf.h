@@ -72,6 +72,15 @@ extern "C" {
  *
  * Default: 2 (link-local + corresponding global address)
  */
+#ifndef GNRC_NETIF_IPV4_ADDRS_NUMOF
+#define GNRC_NETIF_IPV4_ADDRS_NUMOF    (1)
+#endif
+
+/**
+ * @brief   Maximum number of unicast and anycast addresses per interface
+ *
+ * Default: 2 (link-local + corresponding global address)
+ */
 #ifndef GNRC_NETIF_IPV6_ADDRS_NUMOF
 #define GNRC_NETIF_IPV6_ADDRS_NUMOF    (2)
 #endif
