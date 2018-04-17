@@ -63,6 +63,10 @@ typedef enum {
      */
     NETOPT_HOP_LIMIT,
 
+    NETOPT_IPV4_ADDR,
+    
+    NETOPT_IPV4_ADDR_REMOVE,
+
     /**
      * @brief   get the IPv6 interface identifier of a network interface as
      *          eui64_t.

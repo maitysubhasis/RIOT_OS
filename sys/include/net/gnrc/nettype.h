@@ -201,7 +201,7 @@ static inline gnrc_nettype_t gnrc_nettype_from_protnum(uint8_t num)
 {
     switch (num) {
 #ifdef MODULE_GNRC_ICMPV4
-        case PROTNUM_ICMPV4:
+        case PROTNUM_ICMP:
             return GNRC_NETTYPE_ICMPV4;
 #endif
 #ifdef MODULE_GNRC_ICMPV6
@@ -255,7 +255,7 @@ static inline uint8_t gnrc_nettype_to_protnum(gnrc_nettype_t type)
     switch (type) {
 #ifdef MODULE_GNRC_ICMPV4
         case GNRC_NETTYPE_ICMPV4:
-            return PROTNUM_ICMPV4;
+            return PROTNUM_ICMP;
 #endif
 #ifdef MODULE_GNRC_ICMPV6
         case GNRC_NETTYPE_ICMPV6:

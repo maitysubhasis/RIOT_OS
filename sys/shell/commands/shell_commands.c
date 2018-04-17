@@ -86,6 +86,7 @@ extern int _gnrc_ipv6_nib(int argc, char **argv);
 
 #ifdef MODULE_GNRC_NETIF
 extern int _gnrc_netif_config(int argc, char **argv);
+extern int _gnrc_netif_config_4(int argc, char **argv);
 #ifdef MODULE_GNRC_TXTSND
 extern int _gnrc_netif_send(int argc, char **argv);
 #endif
@@ -186,6 +187,7 @@ const shell_command_t _shell_command_list[] = {
 #endif
 #ifdef MODULE_GNRC_NETIF
     {"ifconfig", "Configure network interfaces", _gnrc_netif_config},
+    {"ifc", "Configure network interfaces", _gnrc_netif_config_4},
 #ifdef MODULE_GNRC_TXTSND
     {"txtsnd", "Sends a custom string as is over the link layer", _gnrc_netif_send },
 #endif

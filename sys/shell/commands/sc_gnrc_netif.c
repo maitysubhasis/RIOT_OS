@@ -332,6 +332,15 @@ static unsigned _netif_list_flag(kernel_pid_t iface, netopt_t opt, char *str,
     return line_thresh;
 }
 
+#ifdef MODULE_GNRC_IPV4
+static void _netif_list_ipv4(ipv4_addr_t *addr)
+{
+    char addr_str[IPV4_ADDR_MAX_STR_LEN];
+    ipv4_addr_to_str(addr_str, addr, sizeof(addr_str));
+    printf("inet4 addres: %s\n", addr_str);
+}
+#endif
+
 #ifdef MODULE_GNRC_IPV6
 static void _netif_list_ipv6(ipv6_addr_t *addr, uint8_t flags)
 {
@@ -379,6 +388,10 @@ static void _netif_list_groups(ipv6_addr_t *addr)
 
 static void _netif_list(kernel_pid_t iface)
 {
+#ifdef MODULE_GNRC_IPV6
+ipv4_addr_t ipv4_addrs[GNRC_NETIF_IPV4_ADDRS_NUMOF];
+#endif
+
 #ifdef MODULE_GNRC_IPV6
     ipv6_addr_t ipv6_addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
     ipv6_addr_t ipv6_groups[GNRC_NETIF_IPV6_GROUPS_NUMOF];
@@ -513,6 +526,15 @@ static void _netif_list(kernel_pid_t iface)
         line_thresh++;
     }
     line_thresh = _newline(0U, line_thresh);
+
+#ifdef MODULE_GNRC_IPV4
+    res = gnrc_netapi_get(iface, NETOPT_IPV4_ADDR, 0, ipv4_addrs,
+                          sizeof(ipv4_addrs));
+    for (unsigned i = 0; i < (res / sizeof(ipv4_addr_t)); i++) {
+            _netif_list_ipv4(&ipv4_addrs[i]);
+    }
+#endif
+
 #ifdef MODULE_GNRC_IPV6
     printf("Link type: %s",
            (gnrc_netapi_get(iface, NETOPT_IS_WIRED, 0, &u16, sizeof(u16)) > 0) ?
@@ -803,33 +825,6 @@ static int _netif_set_addr(kernel_pid_t iface, netopt_t opt, char *addr_str)
     printf("success: set ");
     _print_netopt(opt);
     printf(" on interface %" PRIkernel_pid " to %s\n", iface, addr_str);
-
-    return 0;
-}
-
-static int _netif_set_addr_4(kernel_pid_t iface, char *addr_str)
-{
-    uint8_t addr[GNRC_NETIF_L2ADDR_MAXLEN];
-    size_t addr_len = gnrc_netif_addr_from_str(addr_str, addr);
-
-    if (addr_len == 0) {
-        puts("error: unable to parse address.\n"
-             "Must be of format [0-9a-fA-F]{2}(:[0-9a-fA-F]{2})*\n"
-             "(hex pairs delimited by colons)");
-        return 1;
-    }
-
-    // set ipv4 address to interface
-    // if (gnrc_netapi_set(iface, opt, 0, addr, addr_len) < 0) {
-    //     printf("error: unable to set ");
-    //     _print_netopt(opt);
-    //     puts("");
-    //     return 1;
-    // }
-
-    // printf("success: set ");
-    // _print_netopt(opt);
-    // printf(" on interface %" PRIkernel_pid " to %s\n", iface, addr_str);
 
     return 0;
 }
@@ -1201,6 +1196,13 @@ static int _netif_del(kernel_pid_t iface, char *addr_str)
 #endif
 }
 
+static int _netif_del_addr_4(kernel_pid_t iface, char *addr_str)
+{
+    (void)iface;
+    (void)addr_str;
+    return 1;
+}
+
 /* shell commands */
 #ifdef MODULE_GNRC_TXTSND
 int _gnrc_netif_send(int argc, char **argv)
@@ -1296,7 +1298,6 @@ int _gnrc_netif_config(int argc, char **argv)
                     _add_usage(argv[0]);
                     return 1;
                 }
-
                 // add ipv6 address
                 return _netif_add(argv[0], (kernel_pid_t)iface, argc - 3, argv + 3);
             }
@@ -1378,11 +1379,71 @@ int _gnrc_netif_config(int argc, char **argv)
     return 1;
 }
 
+
+static int _netif_set_addr_4(kernel_pid_t iface, char *addr_str)
+{
+    // first cut the address and prefix 
+    char * address = addr_str;
+    uint16_t pfx_len = 0;
+    int len, pos;
+    len = pos = strlen(addr_str);
+    while (pos--) {
+        if (addr_str[pos] == '/') {
+            addr_str[pos] =  '\0';
+            for(++pos;pos<len;pos++) {
+                pfx_len = pfx_len * 10 + addr_str[pos] - '0';
+            }
+            break;
+        }
+    }
+    printf("%s", addr_str);
+    if (len == 0) {
+        printf("\nNo prefix provided.\n");
+    }
+
+    ipv4_addr_t addr;
+    if (ipv4_addr_from_str(&addr, address) == NULL) {
+        puts("error: unable to parse IPv4 address.");
+        return 1;
+    }
+
+    // (void)iface;
+    // (void)addr_str;
+    // set ipv4 address to interface
+    // if (gnrc_netapi_set(iface, opt, 0, addr, addr_len) < 0) {
+    //     printf("error: unable to set ");
+    //     _print_netopt(opt);
+    //     puts("");    //     return 1;
+    // }
+
+    // this msg would end up at functin 
+    // gnrc_netif_get_from_netdev() of gnrc_netif.c
+    if (gnrc_netapi_set(iface, NETOPT_IPV4_ADDR, pfx_len, &addr,
+                        sizeof(addr)) < 0) {
+        printf("error: unable to add IPv6 address\n");
+        return 1;
+    }
+
+    // printf("success: set ");
+    // _print_netopt(opt);
+    // printf(" on interface %" PRIkernel_pid " to %s\n", iface, addr_str);
+
+    return 0;
+}
+
+// TODO: replace this with usage help functions
+void ifconfig4_not_enough_parameter_msg(void) {
+    printf("\nNot enough parameters was passed.\ncommand format: ifconfig4 iface addr set address.\n\n");
+}
+/**
+ * Example commands
+ * ifconfig4 iface addr set address
+ */
 int _gnrc_netif_config_4(int argc, char **argv)
 {
  if (argc < 2) {
         gnrc_netif_t *netif = NULL;
-
+        ifconfig4_not_enough_parameter_msg();
         while ((netif = gnrc_netif_iter(netif))) {
             _netif_list(netif->pid);
         }
@@ -1395,17 +1456,21 @@ int _gnrc_netif_config_4(int argc, char **argv)
         if (_is_iface(iface)) {
             if (argc < 3) {
                 // _netif_list(iface);
-                printf("\nNot enough parameters was passed.\n");
+                ifconfig4_not_enough_parameter_msg();
                 return 0;
             }
             else if (strcmp(argv[2], "addr") == 0) {
-                if (argc < 4) {
-                    printf("\nNot enough parameters was passed.\n");
+                if (argc < 5) {
+                    ifconfig4_not_enough_parameter_msg();
                     // _set_usage(argv[0]);
                     return 1;
                 }
+                if (strcmp(argv[3], "set") == 0) {
+                    return _netif_set_addr_4(iface, argv[4]);
+                } else if (strcmp(argv[3], "del") == 0) {
+                    return _netif_del_addr_4(iface, argv[4]);
+                }
 
-                return _netif_set_addr_4(iface, argv[3]);
             }
             // else if (strcmp(argv[2], "add") == 0) {
             //     if (argc < 4) {
@@ -1416,10 +1481,11 @@ int _gnrc_netif_config_4(int argc, char **argv)
             //     // add ipv6 address
             //     return _netif_add_4(argv[0], (kernel_pid_t)iface, argc - 3, argv + 3);
             // }
-            else if (strcmp(argv[2], "del") == 0) {
+            // else if (strcmp(argv[2], "del") == 0) {
                 // return _netif_del_4((kernel_pid_t)iface, argv[3]);
-            }
+            // }
         }
     }
+    ifconfig4_not_enough_parameter_msg();
     return 1;
 }

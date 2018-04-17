@@ -30,6 +30,7 @@
 
 #include "kernel_types.h"
 #include "msg.h"
+#include "net/ipv4/addr.h"
 #include "net/ipv6/addr.h"
 #include "net/gnrc/netapi.h"
 #include "net/gnrc/pkt.h"
@@ -38,6 +39,9 @@
 #include "net/gnrc/netif/6lo.h"
 #endif
 #include "net/gnrc/netif/flags.h"
+#ifdef MODULE_GNRC_IPV4
+#include "net/gnrc/netif/ipv4.h"
+#endif
 #ifdef MODULE_GNRC_IPV6
 #include "net/gnrc/netif/ipv6.h"
 #endif
@@ -65,6 +69,9 @@ typedef struct {
     rmutex_t mutex;                         /**< Mutex of the interface */
 #if defined(MODULE_GNRC_IPV6) || DOXYGEN
     gnrc_netif_ipv6_t ipv6;                 /**< IPv6 component */
+#endif
+#if defined(MODULE_GNRC_IPV4) || DOXYGEN
+    gnrc_netif_ipv4_t ipv4;                 /**< IPv4 component */
 #endif
 #if defined(MODULE_GNRC_MAC) || DOXYGEN
     gnrc_netif_mac_t mac;                  /**< @ref net_gnrc_mac component */

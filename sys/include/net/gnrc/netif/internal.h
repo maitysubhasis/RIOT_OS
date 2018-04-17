@@ -54,6 +54,16 @@ void gnrc_netif_acquire(gnrc_netif_t *netif);
  */
 void gnrc_netif_release(gnrc_netif_t *netif);
 
+#if defined(MODULE_GNRC_IPV4) || DOXYGEN
+
+int gnrc_netif_ipv4_addr_add_internal(gnrc_netif_t *netif,
+                                      const ipv4_addr_t *addr,
+                                      unsigned pfx_len);
+
+void gnrc_netif_ipv4_addr_remove_internal(gnrc_netif_t *netif);
+
+#endif  /* MODULE_GNRC_IPV4 */
+
 #if defined(MODULE_GNRC_IPV6) || DOXYGEN
 /**
  * @brief   Adds an IPv6 address to the interface
