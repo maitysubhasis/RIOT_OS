@@ -32,6 +32,7 @@
 #include "utlist.h"
 #include "xtimer.h"
 
+// create a netreg entry
 static gnrc_netreg_entry_t server = GNRC_NETREG_ENTRY_INIT_PID(GNRC_NETREG_DEMUX_CTX_ALL,
                                                                KERNEL_PID_UNDEF);
 
@@ -125,6 +126,7 @@ static void start_server(char *port_str)
     /* start server (which means registering pktdump for the chosen port) */
     server.target.pid = gnrc_pktdump_pid;
     server.demux_ctx = (uint32_t)port;
+    // su: here server is a netreg entry
     gnrc_netreg_register(GNRC_NETTYPE_UDP, &server);
     printf("Success: started UDP server on port %" PRIu16 "\n", port);
 }

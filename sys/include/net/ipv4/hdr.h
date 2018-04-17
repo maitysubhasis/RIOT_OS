@@ -92,7 +92,7 @@ typedef struct __attribute__((packed)) {
 
 
 /**
- * @brief   Sets the version field of @p hdr to 6
+ * @brief   Sets the version field of @p hdr to 4
  *
  * @param[out] hdr  Pointer to an IPv4 header.
  */
@@ -112,6 +112,19 @@ static inline void ipv4_hdr_set_version(ipv4_hdr_t *hdr)
 static inline uint8_t ipv4_hdr_get_version(ipv4_hdr_t *hdr)
 {
     return ((hdr->v_ih) >> 4);
+}
+
+/**
+ * @brief   Checks if the version field is set to 4
+ *
+ * @param[in] hdr   Pointer to an IPv4 header.
+ *
+ * @return  true, if version field is 4
+ * @return  false, otherwise
+ */
+static inline bool ipv4_hdr_is(const ipv4_hdr_t *hdr)
+{
+    return (((hdr->v_ih) & 0xf0) == 0x40);
 }
 
 /**
