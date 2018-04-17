@@ -78,8 +78,8 @@ kernel_pid_t gnrc_ipv4_init(void);
  * @param[in] pkt       A packet.
  * @param[in] nh        A protocol number (see @ref net_protnum) of the current snip.
  */
-/* void gnrc_ipv6_demux(gnrc_netif_t *netif, gnrc_pktsnip_t *current,
-                     gnrc_pktsnip_t *pkt, uint8_t nh); */
+void gnrc_ipv4_demux(gnrc_netif_t *netif, gnrc_pktsnip_t *current,
+                     gnrc_pktsnip_t *pkt, uint8_t nh);
 
 /**
  * @brief   Get the IPv4 header from a given list of @ref gnrc_pktsnip_t

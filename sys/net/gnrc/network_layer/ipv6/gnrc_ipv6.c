@@ -742,7 +742,7 @@ static void _receive(gnrc_pktsnip_t *pkt)
 #ifdef MODULE_GNRC_IPV6_BLACKLIST
         if (gnrc_ipv6_blacklisted(&((ipv6_hdr_t *)(pkt->data))->src)) {
             DEBUG("ipv6: Source address blacklisted, dropping packet\n");
-            gnrc_pktbuf_release(pkt);
+            gnrc_pktbuf_frelease(pkt);
             return;
         }
 #endif

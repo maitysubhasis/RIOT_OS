@@ -23,7 +23,7 @@
 #include "net/ipv6/hdr.h"
 #endif
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
 
 #if defined(MODULE_OD) && ENABLE_DEBUG
@@ -209,6 +209,9 @@ static gnrc_pktsnip_t *_recv(gnrc_netif_t *netif)
 
         /* set payload type from ethertype */
         pkt->type = gnrc_nettype_from_ethertype(byteorder_ntohs(hdr->type));
+
+        // su: this should print the EtherType
+        printf("\nPKT type is -> %x\n", byteorder_ntohs(hdr->type));
 
         /* create netif header */
         gnrc_pktsnip_t *netif_hdr;
