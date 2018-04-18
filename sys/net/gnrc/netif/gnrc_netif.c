@@ -1395,7 +1395,8 @@ static void *_gnrc_netif_thread(void *args)
 }
 
 static void _pass_on_packet(gnrc_pktsnip_t *pkt)
-{
+{   
+    // printf("\n--> %d\n", pkt->type);
     /* throw away packet if no one is interested */
     if (!gnrc_netapi_dispatch_receive(pkt->type, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
         DEBUG("gnrc_netif: unable to forward packet of type %i\n", pkt->type);

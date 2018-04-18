@@ -22,7 +22,7 @@ static char _stack[GNRC_IPV4_STACK_SIZE];
 #endif
 
 // this variable will be used for debugging 
-// static char addr_str[IPV4_ADDR_MAX_STR_LEN];
+static char addr_str[IPV4_ADDR_MAX_STR_LEN];
 
 kernel_pid_t gnrc_ipv4_pid = KERNEL_PID_UNDEF;
 
@@ -37,7 +37,7 @@ kernel_pid_t gnrc_ipv4_init(void)
                                       THREAD_CREATE_STACKTEST,
                                       _event_loop, NULL, "ipv4");
         // su: 
-        printf("\nIPv4 pid: %d\n", gnrc_ipv4_pid);
+        // printf("\nIPv4 pid: %d\n", gnrc_ipv4_pid);
     }
     return gnrc_ipv4_pid;
 }
@@ -46,7 +46,7 @@ kernel_pid_t gnrc_ipv4_init(void)
  *         current                 pkt
  *         |                       |
  *         v                       v
- * IPv6 <- IPv6_EXT <- IPv6_EXT <- UNDEF
+ * IPv4 <- IPv6_EXT <- IPv6_EXT <- UNDEF
  */
 // void gnrc_ipv4_demux(gnrc_netif_t *netif, gnrc_pktsnip_t *current,
 //                      gnrc_pktsnip_t *pkt, uint8_t nh)
@@ -58,10 +58,23 @@ kernel_pid_t gnrc_ipv4_init(void)
 //     _dispatch_next_header()
 // }
 
+/* functions for receiving */
+static inline bool _pkt_not_for_me(gnrc_netif_t *netif, ipv4_hdr_t *hdr)
+{
+    // get ip addr for corresponding netif
+    gnrc_netif_ipv4_t * netif_ipv4 = &(netif->ipv4);
+    ipv4_addr_t * ipv4_addr = &(netif_ipv4->addr);
+    ipv4_addr_to_str(addr_str, ipv4_addr, IPV4_ADDR_MAX_STR_LEN);
+    // DEBUG("My ip address: %s.\n", addr_str);
+    ipv4_addr_to_str(addr_str, &(hdr->dst), IPV4_ADDR_MAX_STR_LEN);
+    // DEBUG("Target ip address: %s.\n", addr_str);
+    return !ipv4_addr_equal(ipv4_addr, &(hdr->dst));
+}
+
 static void _receive(gnrc_pktsnip_t *pkt)
 {
     gnrc_netif_t *netif = NULL;
-    gnrc_pktsnip_t *ipv4, *netif_hdr, *first_ext;
+    gnrc_pktsnip_t *ipv4, *netif_hdr, * next;
     ipv4_hdr_t *hdr;
 
     assert(pkt != NULL);
@@ -73,15 +86,13 @@ static void _receive(gnrc_pktsnip_t *pkt)
         netif = gnrc_netif_get_by_pid(((gnrc_netif_hdr_t *)netif_hdr->data)->if_pid);
     }
     
-    first_ext = pkt;
 
-    for (ipv4 = pkt; ipv4 != NULL; ipv4 = ipv4->next) { /* find IPv6 header if already marked */
+    for (ipv4 = pkt; ipv4 != NULL; ipv4 = ipv4->next) { /* find IPv4 header if already marked */
         if ((ipv4->type == GNRC_NETTYPE_IPV4) && (ipv4->size == sizeof(ipv4_hdr_t)) &&
             (ipv4_hdr_is(ipv4->data))) {
             break;
         }
-
-        first_ext = ipv4;
+        next = pkt;
     }
 
     // if collected ipv4 is NULL try to 
@@ -91,7 +102,7 @@ static void _receive(gnrc_pktsnip_t *pkt)
             gnrc_pktbuf_release(pkt);
             return;
         }
-                /* seize ipv6 as a temporary variable */
+        /* seize ipv6 as a temporary variable */
         ipv4 = gnrc_pktbuf_start_write(pkt);
 
         if (ipv4 == NULL) {
@@ -104,7 +115,7 @@ static void _receive(gnrc_pktsnip_t *pkt)
 
         ipv4 = gnrc_pktbuf_mark(pkt, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
 
-        first_ext = pkt;
+        next = pkt;
         pkt->type = GNRC_NETTYPE_UNDEF; /* snip is no longer IPv6 */
 
         if (ipv4 == NULL) {
@@ -116,39 +127,75 @@ static void _receive(gnrc_pktsnip_t *pkt)
     
     /* extract header */
     hdr = (ipv4_hdr_t *)ipv4->data;
-    (void)hdr;
-    (void)first_ext;
-    (void)netif;
-    // (void)reply;
-    /* if available, remove any padding that was added by lower layers
-     * to fulfill their minimum size requirements (e.g. ethernet) */
-    // if ((ipv4 != pkt) && (byteorder_ntohs(hdr->len) < pkt->size)) {
-    //     gnrc_pktbuf_realloc_data(pkt, byteorder_ntohs(hdr->len));
-    // }
-    // else if (byteorder_ntohs(hdr->len) >
-    //          (gnrc_pkt_len_upto(pkt, GNRC_NETTYPE_IPV4) - sizeof(ipv4_hdr_t))) {
-    //     DEBUG("ipv4: invalid payload length: %d, actual: %d, dropping packet\n",
-    //           (int) byteorder_ntohs(hdr->len),
-    //           (int) (gnrc_pkt_len_upto(pkt, GNRC_NETTYPE_IPV4) - sizeof(ipv4_hdr_t)));
+    DEBUG("ipv4: Received (src = %s, ",
+          ipv4_addr_to_str(addr_str, &(hdr->src), sizeof(addr_str)));
+    DEBUG("dst = %s)\n",
+          ipv4_addr_to_str(addr_str, &(hdr->dst), sizeof(addr_str)));
+    
+    // if packate is not for me try to route it 
+    // if (_pkt_not_for_me(netif, hdr)) {
+    //     printf("\npacket is not for me so dropping for now\n");
+    //     DEBUG("ipv6: packet destination not this host\n");
     //     gnrc_pktbuf_release(pkt);
     //     return;
     // }
 
-    // DEBUG("ipv4: Received (src = %s, ",
-    //       ipv4_addr_to_str(addr_str, &(hdr->src), sizeof(addr_str)));
-    // DEBUG("dst = %s, next header = %u, length = %" PRIu16 ")\n",
-    //       ipv4_addr_to_str(addr_str, &(hdr->dst), sizeof(addr_str)),
-    //       hdr->nh, byteorder_ntohs(hdr->len));
-    
-    // // if packate is not for me try to route it 
-    // if (_pkt_not_for_me(&netif, hdr)) {
-    //     printf("\npacket is not for me so trying to route it\n");
-    //     DEBUG("ipv6: packet destination not this host\n");
+    (void)netif;
+    // gnrc_pktsnip_t * tmp;
+
+    if (next == NULL) {
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+
+    switch (hdr->protocol) {
+        case PROTNUM_UDP:
+            if (gnrc_netapi_dispatch_receive(GNRC_NETTYPE_UDP,
+                                            GNRC_NETREG_DEMUX_CTX_ALL,
+                                            pkt) == 0) {
+                gnrc_pktbuf_release(pkt);
+                DEBUG("Releasing ipv4 packet.\n");
+            }
+            return;
+        default:
+            gnrc_pktbuf_release(pkt);
+            return;
+
+    }
+
+        // tmp = gnrc_pktbuf_start_write(pkt);
+
+        // if (tmp == NULL) {
+        //     DEBUG("udp: unable to get write access to packet, drop it\n");
+        //     gnrc_pktbuf_release(pkt);
+        //     return;
+        // }
+
+        // pkt = tmp;     /* reset pkt from temporary variable */
+
+        // ipv4 = gnrc_pktbuf_mark(pkt, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
+
+        // next = pkt;
+        // pkt->type = GNRC_NETTYPE_UNDEF; /* snip is no longer IPv6 */
+
+        // if (ipv4 == NULL) {
+        //     DEBUG("ipv4: error marking IPv4 header, dropping packet\n");
+        //     gnrc_pktbuf_release(pkt);
+        //     return;
+        // }
+
+    // if (ipv4->next->type == GNRC_NETTYPE_IPV4) {
+    //     // printf("IPv4 protocol %i\n", next->type);
     // }
+    // (void)next;
+    // next = ipv4->next;
+    // DEBUG("Next packet type is %d\n", hdr->type);
+    // the packet is for me so do necessary processing
+
 
     // // ipv4->next should give the udp header
-    // /* IPv6 internal demuxing (ICMPv4, Extension headers etc.) */
-    // gnrc_ipv4_demux(netif, first_ext, pkt, hdr->nh);
+    /* IPv4 internal demuxing (ICMP, UDP etc.) */
+    // gnrc_ipv4_demux(hdr->protocol, next, pkt);
 }
 
 // static void _send_to_iface(gnrc_netif_t *netif, gnrc_pktsnip_t *pkt)
@@ -200,7 +247,7 @@ static void *_event_loop(void *args)
         msg_receive(&msg);
 
         // su: 
-        // printf("\nReceived message at IPv4 layer.\n");
+        DEBUG("Received message at IPv4 layer.\n");
         switch (msg.type) {
             case GNRC_NETAPI_MSG_TYPE_RCV:
                 DEBUG("ipv4: GNRC_NETAPI_MSG_TYPE_RCV received\n");

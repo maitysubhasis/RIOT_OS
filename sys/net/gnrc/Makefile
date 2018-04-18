@@ -10,6 +10,9 @@ endif
 ifneq (,$(filter gnrc_ipv6,$(USEMODULE)))
   DIRS += network_layer/ipv6
 endif
+ifneq (,$(filter gnrc_arp,$(USEMODULE)))
+  DIRS += link_layer/arp
+endif
 ifneq (,$(filter gnrc_ipv4,$(USEMODULE)))
   DIRS += network_layer/ipv4
 endif

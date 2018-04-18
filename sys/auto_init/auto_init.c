@@ -36,6 +36,10 @@
 #include "net/gnrc/sixlowpan.h"
 #endif
 
+#ifdef MODULE_GNRC_ARP
+#include "net/gnrc/arp.h"
+#endif
+
 #ifdef MODULE_GNRC_IPV4
 #include "net/gnrc/ipv4.h"
 #endif
@@ -125,6 +129,10 @@ void auto_init(void)
 #ifdef MODULE_GNRC_IPV4
     DEBUG("Auto init gnrc_ipv4 module.\n");
     gnrc_ipv4_init();
+#endif
+#ifdef MODULE_GNRC_ARP
+    DEBUG("Auto init gnrc_arp module.\n");
+    gnrc_arp_init();
 #endif
 #ifdef MODULE_GNRC_IPV6
     DEBUG("Auto init gnrc_ipv6 module.\n");

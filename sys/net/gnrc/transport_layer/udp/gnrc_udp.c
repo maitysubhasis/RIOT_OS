@@ -29,8 +29,7 @@
 #include "net/gnrc.h"
 #include "net/inet_csum.h"
 
-
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 /**
@@ -81,6 +80,12 @@ static uint16_t _calc_csum(gnrc_pktsnip_t *hdr, gnrc_pktsnip_t *pseudo_hdr,
             csum = ipv6_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
             break;
 #endif
+#ifdef MODULE_GNRC_IPV4
+        case GNRC_NETTYPE_IPV4:
+            // su: TODO. write the code the checksum
+            csum = ipv4_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
+            break;
+#endif
         default:
             (void)len;
             return 0;
@@ -113,7 +118,8 @@ static void _receive(gnrc_pktsnip_t *pkt)
     }
     pkt = udp;
 
-    ipv6 = gnrc_pktsnip_search_type(pkt, GNRC_NETTYPE_IPV6);
+    // this can be either IPv4 or IPv6 packets
+    ipv6 = gnrc_pktsnip_search_type(pkt, GNRC_NETTYPE_IPV4);
 
     assert(ipv6 != NULL);
 
@@ -145,15 +151,16 @@ static void _receive(gnrc_pktsnip_t *pkt)
         gnrc_pktbuf_release(pkt);
         return;
     }
-    if (_calc_csum(udp, ipv6, pkt) != 0xFFFF) {
-        DEBUG("udp: received packet with invalid checksum, dropping it\n");
-        gnrc_pktbuf_release(pkt);
-        return;
-    }
+    // su:TODO fix this checksum part
+    // if (_calc_csum(udp, ipv6, pkt) != 0xFFFF) {
+    //     DEBUG("udp: received packet with invalid checksum, dropping it\n");
+    //     gnrc_pktbuf_release(pkt);
+    //     return;
+    // }
 
     /* get port (netreg demux context) */
     port = (uint32_t)byteorder_ntohs(hdr->dst_port);
-
+    udp_hdr_print(pkt->data);
     /* send payload to receivers */
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_UDP, port, pkt)) {
         DEBUG("udp: unable to forward packet as no one is interested in it\n");
