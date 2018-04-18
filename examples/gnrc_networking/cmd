@@ -2,3 +2,5 @@ ping6 1 fe80::708e:1dff:fe18:d626%6
 ping6 1 fe80::708e:1dff:fe18:d621%6
 
 ifc 7 addr set 192.168.0.111
+
+ifc 8 addr set 192.168.0.114
