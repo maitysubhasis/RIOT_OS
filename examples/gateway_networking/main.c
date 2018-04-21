@@ -22,11 +22,14 @@
 
 #include "shell.h"
 #include "msg.h"
+#include "./yaml-server.c"
+#include "./udp.c"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 extern int udp_cmd(int argc, char **argv);
+extern kernel_pid_t gateway_pid;
 
 static const shell_command_t shell_commands[] = {
     { "udp", "send data over UDP and listen on UDP ports", udp_cmd },
@@ -40,10 +43,15 @@ int main(void)
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     puts("RIOT network stack example application");
 
+    gateway_init();
+    printf("%d\n", gateway_pid);
+    printf("%d\n", thread_getpid());
+
     /* start shell */
     puts("All up, running the shell now");
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+
 
     /* should be never reached */
     return 0;

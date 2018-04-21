@@ -31,13 +31,21 @@
 #include "timex.h"
 #include "utlist.h"
 #include "xtimer.h"
+// #include "./gateway.c"
+
+extern kernel_pid_t gateway_pid;
+
+
+#ifndef UDP_H
+#define UDP_H
+
 
 // create a netreg entry
 static gnrc_netreg_entry_t server = GNRC_NETREG_ENTRY_INIT_PID(GNRC_NETREG_DEMUX_CTX_ALL,
                                                                KERNEL_PID_UNDEF);
 
 
-static void send(char *addr_str, char *port_str, char *data, unsigned int num,
+static void send_ipv6(char *addr_str, char *port_str, char *data, unsigned int num,
                  unsigned int delay)
 {
     int iface;
@@ -86,6 +94,7 @@ static void send(char *addr_str, char *port_str, char *data, unsigned int num,
             gnrc_pktbuf_release(udp);
             return;
         }
+        printf("%d", ip->type);
         /* add netif header, if interface was given */
         if (iface > 0) {
             gnrc_pktsnip_t *netif = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
@@ -123,8 +132,11 @@ static void start_server(char *port_str)
         puts("Error: invalid port specified");
         return;
     }
+    
+    printf("%d\n", gateway_pid);
+
     /* start server (which means registering pktdump for the chosen port) */
-    server.target.pid = gnrc_pktdump_pid;
+    server.target.pid = gateway_pid;
     server.demux_ctx = (uint32_t)port;
     // su: here server is a netreg entry
     gnrc_netreg_register(GNRC_NETTYPE_UDP, &server);
@@ -165,7 +177,7 @@ int udp_cmd(int argc, char **argv)
         if (argc > 6) {
             delay = atoi(argv[6]);
         }
-        send(argv[2], argv[3], argv[4], num, delay);
+        send_ipv6(argv[2], argv[3], argv[4], num, delay);
     }
     else if (strcmp(argv[1], "server") == 0) {
         if (argc < 3) {
@@ -191,3 +203,5 @@ int udp_cmd(int argc, char **argv)
     }
     return 0;
 }
+
+#endif

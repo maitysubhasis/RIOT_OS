@@ -25,7 +25,7 @@
 #include "thread.h"
 #include "irq.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 #include "bitarithm.h"
 #include "sched.h"
@@ -80,7 +80,7 @@ int thread_wakeup(kernel_pid_t pid)
     }
     else if (other_thread->status == STATUS_SLEEPING) {
         DEBUG("thread_wakeup: Thread is sleeping.\n");
-
+        
         sched_set_status(other_thread, STATUS_RUNNING);
 
         irq_restore(old_state);

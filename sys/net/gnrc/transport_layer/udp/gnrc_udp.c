@@ -80,12 +80,12 @@ static uint16_t _calc_csum(gnrc_pktsnip_t *hdr, gnrc_pktsnip_t *pseudo_hdr,
             csum = ipv6_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
             break;
 #endif
-#ifdef MODULE_GNRC_IPV4
-        case GNRC_NETTYPE_IPV4:
-            // su: TODO. write the code the checksum
-            csum = ipv4_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
-            break;
-#endif
+// #ifdef MODULE_GNRC_IPV4
+//         case GNRC_NETTYPE_IPV4:
+//             // su: TODO. write the code the checksum
+//             csum = ipv4_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
+//             break;
+// #endif
         default:
             (void)len;
             return 0;
@@ -120,8 +120,8 @@ static void _receive(gnrc_pktsnip_t *pkt)
 
     // this can be either IPv4 or IPv6 packets
     ipv6 = gnrc_pktsnip_search_type(pkt, GNRC_NETTYPE_IPV4);
-
-    assert(ipv6 != NULL);
+    (void)ipv6;
+    // assert(ipv6 != NULL);
 
     if ((pkt->next != NULL) && (pkt->next->type == GNRC_NETTYPE_UDP) &&
         (pkt->next->size == sizeof(udp_hdr_t))) {

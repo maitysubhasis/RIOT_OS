@@ -77,36 +77,46 @@ static void _receive(gnrc_pktsnip_t *pkt, kernel_pid_t sender_iface)
     int res;
     uint8_t hwaddr[GNRC_NETIF_L2ADDR_MAXLEN];
     arp_hdr_t * arp = (arp_hdr_t *)  pkt->data;
-
-    res = gnrc_netapi_get(sender_iface, NETOPT_ADDRESS, 0, hwaddr, sizeof(hwaddr));
-    if (res >= 0) {
-        gnrc_pktsnip_t *netif_hdr = gnrc_netif_hdr_build(NULL, 0, arp->src, sizeof(arp->src));
-        
-        memcpy(arp->tha, hwaddr, sizeof(hwaddr));
-        // swap target and source addresses
-        preapare_for_reply(arp);
-
-        /* add netif_hdr to front of the pkt list */
-        LL_PREPEND(pkt, netif_hdr);
-
-        if (ENABLE_DEBUG) {
-            ipv4_addr_to_str(addr_str, &(arp->spa), IPV4_ADDR_MAX_STR_LEN);
-            DEBUG("Source ip address: %s.\n", addr_str);
-            DEBUG("gnrc_netif_ethernet: src l2 addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-                arp->src[0], arp->src[1], arp->src[2], arp->src[3], arp->src[4], arp->src[5]);
+    uint8_t oper = arp->oper && 0x0002;
+    if (oper == 1) {
+        res = gnrc_netapi_get(sender_iface, NETOPT_ADDRESS, 0, hwaddr, sizeof(hwaddr));
+        if (res >= 0) {
+            gnrc_pktsnip_t *netif_hdr = gnrc_netif_hdr_build(NULL, 0, arp->src, sizeof(arp->src));
             
-            ipv4_addr_to_str(addr_str, &(arp->tpa), IPV4_ADDR_MAX_STR_LEN);
-            DEBUG("Target ip address: %s.\n", addr_str);
-            DEBUG("gnrc_netif_ethernet: target l2 addr %02x:%02x:%02x:%02x:%02x:%02x\n",
-            arp->tha[0], arp->tha[1], arp->tha[2], arp->tha[3], arp->tha[4], arp->tha[5]);
+            memcpy(arp->tha, hwaddr, sizeof(hwaddr));
+            // swap target and source addresses
+            preapare_for_reply(arp);
+
+            /* add netif_hdr to front of the pkt list */
+            LL_PREPEND(pkt, netif_hdr);
+
+            if (ENABLE_DEBUG) {
+                ipv4_addr_to_str(addr_str, &(arp->spa), IPV4_ADDR_MAX_STR_LEN);
+                DEBUG("Source ip address: %s.\n", addr_str);
+                DEBUG("gnrc_netif_ethernet: src l2 addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+                    arp->src[0], arp->src[1], arp->src[2], arp->src[3], arp->src[4], arp->src[5]);
+                
+                ipv4_addr_to_str(addr_str, &(arp->tpa), IPV4_ADDR_MAX_STR_LEN);
+                DEBUG("Target ip address: %s.\n", addr_str);
+                DEBUG("gnrc_netif_ethernet: target l2 addr %02x:%02x:%02x:%02x:%02x:%02x\n",
+                arp->tha[0], arp->tha[1], arp->tha[2], arp->tha[3], arp->tha[4], arp->tha[5]);
+            }
+            // send arp reply
+            if (gnrc_netapi_send(sender_iface, pkt) < 1) {
+                DEBUG("arp: unable to send packet\n");
+                gnrc_pktbuf_release(pkt);
+            }
         }
-        // send arp reply
-        if (gnrc_netapi_send(sender_iface, pkt) < 1) {
-            DEBUG("arp: unable to send packet\n");
-            gnrc_pktbuf_release(pkt);
-        }
+    } else if (oper == 2) {
+        // save the data in forwarding ttable
+        // msg_reply();
     }
 }
+
+// static void _send(gnrc_pktsnip_t *pkt, kernel_pid_t sender_iface)
+// {
+    
+// }
 
     static void *_event_loop(void *args)
 {

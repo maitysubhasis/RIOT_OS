@@ -226,6 +226,15 @@ static void _receive(gnrc_pktsnip_t *pkt)
 //     ipv6_hdr_t *hdr;
 // }
 
+// void _send(gnrc_pktsnip_t pkt, true)
+// {
+    // check if dst address l2 address exists in arp_table
+    // else send arp request via msg_send_receive()
+    // wait for msg_reply()
+    // on reply check if the table is filled
+    // if filled send the pkt
+// }
+
 static void *_event_loop(void *args)
 {
     msg_t msg, reply, msg_q[GNRC_IPV4_MSG_QUEUE_SIZE];
@@ -233,20 +242,18 @@ static void *_event_loop(void *args)
                                                             sched_active_pid);
 
     (void)args;
-    (void)reply;
     msg_init_queue(msg_q, GNRC_IPV4_MSG_QUEUE_SIZE);
 
     // /* register interest in all IPv4 packets */
     gnrc_netreg_register(GNRC_NETTYPE_IPV4, &me_reg);
 
     // /* preinitialize ACK */
-    // reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
+    reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
 
     /* start event loop */
     while (1) {
         msg_receive(&msg);
 
-        // su: 
         DEBUG("Received message at IPv4 layer.\n");
         switch (msg.type) {
             case GNRC_NETAPI_MSG_TYPE_RCV:
@@ -262,7 +269,7 @@ static void *_event_loop(void *args)
             case GNRC_NETAPI_MSG_TYPE_SET:
                 DEBUG("ipv4: reply to unsupported get/set\n");
                 reply.content.value = -ENOTSUP;
-                // msg_reply(&msg, &reply);
+                msg_reply(&msg, &reply);
                 break;
             default:
                 break;

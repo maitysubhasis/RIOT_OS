@@ -56,3 +56,5 @@ Makefile.local
 
 # scan-build artifacts
 scan-build/
+
+/node-modules

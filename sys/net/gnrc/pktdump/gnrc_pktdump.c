@@ -50,6 +50,7 @@ static void _dump_snip(gnrc_pktsnip_t *pkt)
     switch (pkt->type) {
         case GNRC_NETTYPE_UNDEF:
             printf("NETTYPE_UNDEF (%i)\n", pkt->type);
+            printf("%s\n", (char *)pkt->data);
             od_hex_dump(pkt->data, pkt->size, OD_WIDTH_DEFAULT);
             break;
 #ifdef MODULE_GNRC_NETIF
@@ -114,7 +115,7 @@ static void _dump(gnrc_pktsnip_t *pkt)
     gnrc_pktsnip_t *snip = pkt;
 
     while (snip != NULL) {
-        printf("~~ SNIP %2i - size: %3u byte, type: ", snips,
+        printf("~~ SNIP %2d - size: %3u byte, type: ", snips,
                (unsigned int)snip->size);
         _dump_snip(snip);
         ++snips;

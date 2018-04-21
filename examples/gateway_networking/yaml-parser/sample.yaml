@@ -1,0 +1,12 @@
+proto: yaml
+type: req
+src:
+  addr: 192.168.0.110
+  type: 4
+  port: 5500
+dst:
+  type: 6
+  addr: fe88::1
+  port: 5500
+cmd: blink-light
+data: send some data also
