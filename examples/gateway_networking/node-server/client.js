@@ -9,7 +9,7 @@ var dgram = require('dgram');
 var message = `proto: yaml
 type: req
 src:
-  addr: 192.168.0.110
+  addr: 10.0.0.110
   type: 4
   port: 5500
 dst:
@@ -19,7 +19,7 @@ dst:
 cmd: blink-light
 response:
   data: send some data also`;
-
+  
 var client = dgram.createSocket('udp4');
 client.bind(LOCAL_PORT);
 

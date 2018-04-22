@@ -13,19 +13,21 @@
 #include "net/icmpv6.h"
 #include "net/ipv6/addr.h"
 #include "net/ipv6/hdr.h"
+#include "net/gnrc/ipv4.h"
 #include "net/tcp.h"
 #include "net/udp.h"
 #include "net/sixlowpan.h"
 #include "od.h"
 #include "string.h"
 
-#include "./yaml-parser/yaml.h"
+#include "yaml-parser/yaml.h"
+#include "udp.h"
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#ifndef GATEWAY_H
-#define GATEWAY_H
+#ifndef YAML_H
+#define YAML_H
 
 /**
  * @brief   PID of the pktdump thread
@@ -38,6 +40,10 @@ kernel_pid_t gateway_pid = KERNEL_PID_UNDEF;
 static char _stack[THREAD_STACKSIZE_MAIN];
 static void *_eventloop(void *arg);
 
+static char ipv4_addr_str[IPV4_ADDR_MAX_STR_LEN];
+// static char ipv6_addr_str[IPV6_ADDR_MAX_STR_LEN];
+
+
 kernel_pid_t gateway_init(void)
 {
     if (gateway_pid == KERNEL_PID_UNDEF) {
@@ -48,33 +54,88 @@ kernel_pid_t gateway_init(void)
     return gateway_pid;
 }
 
+gnrc_netif_t * get_wired_iface(void) 
+{
+    gnrc_netif_t *netif = NULL;
+    uint16_t u16;
+
+    while ((netif = gnrc_netif_iter(netif))) {
+        if (gnrc_netapi_get(netif->pid, NETOPT_IS_WIRED, 0, &u16, sizeof(u16)) > 0) {
+            return netif;
+        }
+    }
+    return NULL;
+}
+
+gnrc_netif_t * get_wireless_iface(void) 
+{
+    gnrc_netif_t *netif = NULL;
+    uint16_t u16;
+    while ((netif = gnrc_netif_iter(netif))) {
+        if (!(gnrc_netapi_get(netif->pid, NETOPT_IS_WIRED, 0, &u16, sizeof(u16)) > 0)) {
+            return netif;
+        }
+    }
+    return NULL;
+}
+
+int comp (char *a, char *b) {
+    if (strncmp(a, b, strlen(b)) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 void _recv(gnrc_pktsnip_t *pkt)
 {
     int len = pkt->size;
-    int got = 0;
+    void * data = pkt->data;
+    char * dp = NULL;
     char dbuff[2048];
-
+    gnrc_netif_t * netif;
     // DEBUG("Received packet: %s\n", (char *)pkt->data);
 
-    got = getVal(dbuff, pkt->data, len, "proto");
-    if (got && strcmp(dbuff, "yaml") == 0) {
-        DEBUG("got yaml data, not process it.\n");
-        if (getVal(dbuff, pkt->data, len, "type")) {
-            if (strcmp(dbuff, "req") == 0) {
-                // handle requests from PC
+    if (getVal(&dp, data, len, "proto") && comp(dp, "yaml")) {
+        DEBUG("got yaml data, now process it.\n");
+        getVal(&dp, data, len, "type");
+        if (comp(dp, "req")) {
+            DEBUG("Got req!\n");
+            getVal(&dp, data, len, "src.type");
+            if (comp(dp, "4")) {
+                DEBUG("Got req from ipv4!\n");
+                getVal(&dp, data, len, "src.addr");
                 // send the data to mote
-                // get my ip
-                // if my ip and dst ip are same send reply
-                // send_ipv6();
-            } else if (strcmp(dbuff, "res") == 0) {
-                // handle responses from motes
+                getData(ipv4_addr_str, dp);
+                netif = get_wired_iface();
+                printf("%s\n", ipv4_addr_str);
+                send_ipv4(ipv4_addr_str, "8806", "returning data", netif->pid);
+            } else if (comp(dp, "6")) {
+                DEBUG("Got req from ipv6!\n");
+                // send the data to PC
 
             }
+            // handle requests from PC
+            // send the data to mote
+            // get my ip
+            // if my ip and dst ip are same send reply
+            // send_ipv6();
+        } else if (comp(dp, "res")) {
+            // handle responses from motes
+            getVal(&dp, data, len, "dst.type");
+            if (comp(dp, "4")) {
+                DEBUG("Got res from ipv4!\n");
+                // send the data to mote
+            } else if (comp(dp, "6")) {
+                DEBUG("Got res from ipv6!\n");
+                // send the data to PC
+                getVal(&dp, data, len, "dst.addr");
+                getData(ipv4_addr_str, dp);
+                netif = get_wired_iface();
+                send_ipv4(ipv4_addr_str, "8808", data, netif->pid);
+            }
         }
-    } else {
-        gnrc_pktbuf_release(pkt);
     }
-
+    (void)dbuff;
     gnrc_pktbuf_release(pkt);
 }
 

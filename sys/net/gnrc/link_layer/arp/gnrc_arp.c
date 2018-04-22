@@ -39,6 +39,8 @@ static char _stack[GNRC_ARP_STACK_SIZE];
 
 kernel_pid_t gnrc_arp_pid = KERNEL_PID_UNDEF;
 
+arp_table_t arp_table;
+
 static char addr_str[IPV4_ADDR_MAX_STR_LEN];
 
 static void _receive(gnrc_pktsnip_t *pkt, kernel_pid_t sender_iface);

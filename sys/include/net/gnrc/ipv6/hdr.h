@@ -9,7 +9,7 @@
 /**
  * @defgroup    net_gnrc_ipv6_hdr IPv6 header defintions
  * @ingroup     net_gnrc_ipv6
- * @{
+ * @{ 
  *
  * @file
  * @brief   IPv6 header

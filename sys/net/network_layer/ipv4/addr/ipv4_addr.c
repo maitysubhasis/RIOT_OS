@@ -25,9 +25,3 @@
 #else
 #include <stdio.h>
 #endif
-
-// uint8_t ipv4_addr_match_prefix(const ipv6_addr_t *a, const ipv6_addr_t *b)
-// {
-// 	(void)a;
-// 	(void)b;
-// }

@@ -19,33 +19,98 @@
  * @}
  */
 
+#ifndef UDP_H
+#define UDP_H
+
+
 #include <stdio.h>
 #include <inttypes.h>
 
 #include "net/gnrc.h"
 #include "net/gnrc/ipv6.h"
+#include "net/gnrc/ipv4.h"
 #include "net/gnrc/netif.h"
 #include "net/gnrc/netif/hdr.h"
 #include "net/gnrc/udp.h"
 #include "net/gnrc/pktdump.h"
 #include "timex.h"
 #include "utlist.h"
-#include "xtimer.h"
-// #include "./gateway.c"
+
+// #include "udp.h"
 
 extern kernel_pid_t gateway_pid;
-
-
-#ifndef UDP_H
-#define UDP_H
-
 
 // create a netreg entry
 static gnrc_netreg_entry_t server = GNRC_NETREG_ENTRY_INIT_PID(GNRC_NETREG_DEMUX_CTX_ALL,
                                                                KERNEL_PID_UNDEF);
 
+void send_ipv4(char *addr_str, char *port_str, char *data, kernel_pid_t iface_pid)
+{
+    uint16_t port;
+    ipv4_addr_t addr;
 
-static void send_ipv6(char *addr_str, char *port_str, char *data, unsigned int num,
+    /* get ipv4 interface */
+    /* parse destination address */
+    if (ipv4_addr_from_str(&addr, addr_str) == NULL) {
+        puts("Error: unable to parse destination address");
+        return;
+    }
+    /* parse port */
+    port = atoi(port_str);
+    if (port == 0) {
+        puts("Error: unable to parse destination port");
+        return;
+    }
+
+    gnrc_pktsnip_t *payload, *udp, *ip;
+    unsigned payload_size;
+    /* allocate payload */
+    payload = gnrc_pktbuf_add(NULL, data, strlen(data), GNRC_NETTYPE_UNDEF);
+    if (payload == NULL) {
+        puts("Error: unable to copy data to packet buffer");
+        return;
+    }
+    /* store size for output */
+    payload_size = (unsigned)payload->size;
+    /* allocate UDP header, set source port := destination port */
+    udp = gnrc_udp_hdr_build(payload, port, port);
+    if (udp == NULL) {
+        puts("Error: unable to allocate UDP header");
+        gnrc_pktbuf_release(payload);
+        return;
+    }
+
+    /* allocate IPv4 header */
+    ip = gnrc_ipv4_hdr_build(udp, NULL, &addr);
+    ((ipv4_hdr_t *)(ip->data))->protocol = PROTNUM_UDP;
+
+
+    if (ip == NULL) {
+        puts("Error: unable to allocate IPv6 header");
+        gnrc_pktbuf_release(udp);
+        return;
+    }
+    // if (ip->type == GNRC_NETTYPE_IPV4) {
+    //     printf("Sending packet type is: %d\n", ip->type);
+    // }
+    /* add netif header, if interface was given */
+    gnrc_pktsnip_t *netif = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
+
+    ((gnrc_netif_hdr_t *)netif->data)->if_pid = iface_pid;
+    LL_PREPEND(ip, netif);
+
+    /* send packet */
+    if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_UDP, GNRC_NETREG_DEMUX_CTX_ALL, ip)) {
+        puts("Error: unable to locate UDP thread");
+        gnrc_pktbuf_release(ip);
+        return;
+    }
+    /* access to `payload` was implicitly given up with the send operation above
+        * => use temporary variable for output */
+    printf("Success: sent %u byte(s) to [%s]:%u\n", payload_size, addr_str,  port);
+}
+
+void send_ipv6(char *addr_str, char *port_str, char *data, unsigned int num,
                  unsigned int delay)
 {
     int iface;
@@ -94,7 +159,11 @@ static void send_ipv6(char *addr_str, char *port_str, char *data, unsigned int n
             gnrc_pktbuf_release(udp);
             return;
         }
-        printf("%d", ip->type);
+
+        // if (ip->type == GNRC_NETTYPE_IPV6) {
+        //     printf("\nSending packet type is: %d\n", ip->type);
+        // }
+        
         /* add netif header, if interface was given */
         if (iface > 0) {
             gnrc_pktsnip_t *netif = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
@@ -110,7 +179,7 @@ static void send_ipv6(char *addr_str, char *port_str, char *data, unsigned int n
         }
         /* access to `payload` was implicitly given up with the send operation above
          * => use temporary variable for output */
-        printf("Success: sent %u byte(s) to [%s]:%u\n", payload_size, addr_str,
+        printf("\nSuccess: sent %u byte(s) to [%s]:%u\n", payload_size, addr_str,
                port);
         xtimer_usleep(delay);
     }
@@ -178,6 +247,19 @@ int udp_cmd(int argc, char **argv)
             delay = atoi(argv[6]);
         }
         send_ipv6(argv[2], argv[3], argv[4], num, delay);
+    }
+    else if (strcmp(argv[1], "send4") == 0) {
+        uint32_t num = 1;
+        if (argc < 5) {
+            printf("usage: %s send <addr> <port> <data> [<num> [<delay in us>]]\n",
+                   argv[0]);
+            return 1;
+        }
+        if (argc > 5) {
+            num = atoi(argv[5]);
+        }
+        
+        send_ipv4(argv[2], argv[3], argv[4], num);
     }
     else if (strcmp(argv[1], "server") == 0) {
         if (argc < 3) {

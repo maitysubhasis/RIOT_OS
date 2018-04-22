@@ -22,8 +22,8 @@
 
 #include "shell.h"
 #include "msg.h"
-#include "./yaml-server.c"
-#include "./udp.c"
+#include "yaml-server.c"
+#include "udp.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];

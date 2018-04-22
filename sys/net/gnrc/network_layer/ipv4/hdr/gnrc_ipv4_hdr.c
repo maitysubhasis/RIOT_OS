@@ -17,6 +17,7 @@
 #include "net/gnrc/nettype.h"
 #include "net/gnrc/pktbuf.h"
 #include "net/protnum.h"
+#include "byteorder.h"
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
@@ -69,13 +70,12 @@ gnrc_pktsnip_t *gnrc_ipv4_hdr_build(gnrc_pktsnip_t *payload, const ipv4_addr_t *
     }
     else {
         DEBUG("ipv4_hdr: set packet destination to ::1\n");
-        ipv4_addr_set_loopback(&hdr->dst);
+        // ipv4_addr_set_loopback(&hdr->dst);
     }
 
-    hdr->v_tc_fl = byteorder_htonl(0x60000000); /* set version, tc and fl in one go*/
-    hdr->nh = PROTNUM_RESERVED;
-    hdr->hl = 0;
-
+    ipv4_hdr_set_version(hdr);
+    ipv4_hdr_set_ihl(hdr, byteorder_htons(sizeof(ipv4_hdr_t)).u8[1]);
+    ipv4_hdr_set_flags(hdr, 2);
     return ipv4;
 }
 

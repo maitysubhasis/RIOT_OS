@@ -179,23 +179,28 @@ void stripSpace (char ** str) {
 	}
 }
 
-int getVal(char * dbuff, char * data, int len, char * _keys) {
+void getData(char * dbuff, char * dp) {
+	int dataLen = fountAt(dp, '\n');
+	copy(dbuff, dp, dataLen);
+	dbuff[dataLen] = '\0';
+}
+
+int getVal(char ** dp, char * data, int len, char * _keys) {
   char keys[255];
   char parentIndent[100];
-  char * fPos = data;
+  char * cPos = data;
   int f = 0;
-  int dataLen = 0;
-	copy(keys, _keys, strlen(_keys) + 1);
-	int keyCount = splitKeys(keys);
-  f = getValue(&fPos, keys, keyCount, 0, parentIndent, len);
+  copy(keys, _keys, strlen(_keys) + 1);
+  int keyCount = splitKeys(keys);
+  f = getValue(&cPos, keys, keyCount, 0, parentIndent, len);
 	if (f) {
-	  data = charPos(fPos, ':');
-	  data++;
-	  stripSpace(&data);
-	  dataLen = fountAt(data, '\n');
+	  *dp = charPos(cPos, ':');
+	  (*dp)++;
+	  stripSpace(dp); // strip spaces from left side only
+	//   dataLen = fountAt(data, '\n');
       // printf("--%s, %d\n", data, dataLen);
-	  copy(dbuff, data, dataLen);
-	  dbuff[dataLen] = '\0';
+	//   copy(dp, data, dataLen);
+	//   dbuff[dataLen] = '\0';
 	  return 1;
   } else {
   	// printf("%s\n", _keys);

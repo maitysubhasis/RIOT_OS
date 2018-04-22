@@ -122,6 +122,11 @@ int gnrc_netreg_calc_csum(gnrc_pktsnip_t *hdr, gnrc_pktsnip_t *pseudo_hdr)
     }
 
     switch (hdr->type) {
+#ifdef MODULE_GNRC_ICMPV4
+        case GNRC_NETTYPE_ICMPV4:
+        printf("\nERROR: Function is not implemented in file gnrc_netreg.\n");
+            // return gnrc_icmpv6_calc_csum(hdr, pseudo_hdr);
+#endif
 #ifdef MODULE_GNRC_ICMPV6
         case GNRC_NETTYPE_ICMPV6:
             return gnrc_icmpv6_calc_csum(hdr, pseudo_hdr);

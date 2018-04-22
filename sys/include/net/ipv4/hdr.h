@@ -22,6 +22,8 @@
 
 #include "byteorder.h"
 #include "net/ipv4/addr.h"
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,10 +135,11 @@ static inline bool ipv4_hdr_is(const ipv4_hdr_t *hdr)
  * @param[out] hdr  Pointer to an IPv4 header.
  * @param[in] ihl  Size in bytes of the Internet Header Length (including padding)
  */
-static inline void ipv4_hdr_set_ihl(ipv4_hdr_t *hdr, uint16_t ihl)
+static inline void ipv4_hdr_set_ihl(ipv4_hdr_t *hdr, uint8_t ihl)
 {
+
     hdr->v_ih &= 0xf0;
-    hdr->v_ih |= 0x0f & (ihl >> 5);
+    hdr->v_ih |= 0x0f & (ihl >> 2);
 }
 
 /**

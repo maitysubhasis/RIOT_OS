@@ -6,9 +6,7 @@
 #include "thread.h"
 
 #include "net/ipv4.h"
-#include "net/gnrc/ipv6/hdr.h"
-// #include "net/gnrc/ipv4/ext.h"
-// #include "net/gnrc/ipv6/nib.h"
+#include "net/gnrc/ipv4/hdr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,6 +91,7 @@ void gnrc_ipv4_demux(gnrc_netif_t *netif, gnrc_pktsnip_t *current,
  * @return NULL if the packet does not contain an IPv4 header.
  */
 ipv4_hdr_t *gnrc_ipv4_get_header(gnrc_pktsnip_t *pkt);
+
 
 #ifdef __cplusplus
 }

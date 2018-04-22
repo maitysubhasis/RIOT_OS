@@ -41,14 +41,14 @@ extern "C" {
  * @note only available with @ref net_gnrc_ipv6.
  */
 typedef struct {
-    /**
-     * @brief   Flags for gnrc_netif_t::ipv6_addrs
-     *
-     * @see net_gnrc_netif_ipv6_addrs_flags
-     *
-     * @note    Only available with module @ref net_gnrc_ipv6 "gnrc_ipv6".
-     */
-    // uint8_t addrs_flags[GNRC_NETIF_IPV4_ADDRS_NUMOF];
+#ifdef MODULE_NETSTATS_IPV4
+/**
+ * @brief IPv4 packet statistics
+ *
+ * @note    Only available with module `netstats_ipv4`.
+ */
+    netstats_t stats;
+#endif
     
     /**
      * @brief   IPv4 unicast and anycast addresses of the interface

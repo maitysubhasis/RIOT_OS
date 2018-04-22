@@ -29,7 +29,7 @@
 #include "net/gnrc.h"
 #include "net/inet_csum.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 /**
@@ -80,12 +80,6 @@ static uint16_t _calc_csum(gnrc_pktsnip_t *hdr, gnrc_pktsnip_t *pseudo_hdr,
             csum = ipv6_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
             break;
 #endif
-// #ifdef MODULE_GNRC_IPV4
-//         case GNRC_NETTYPE_IPV4:
-//             // su: TODO. write the code the checksum
-//             csum = ipv4_hdr_inet_csum(csum, pseudo_hdr->data, PROTNUM_UDP, len);
-//             break;
-// #endif
         default:
             (void)len;
             return 0;
@@ -160,7 +154,7 @@ static void _receive(gnrc_pktsnip_t *pkt)
 
     /* get port (netreg demux context) */
     port = (uint32_t)byteorder_ntohs(hdr->dst_port);
-    udp_hdr_print(pkt->data);
+    // udp_hdr_print(pkt->data);
     /* send payload to receivers */
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_UDP, port, pkt)) {
         DEBUG("udp: unable to forward packet as no one is interested in it\n");
@@ -183,7 +177,6 @@ static void _send(gnrc_pktsnip_t *pkt)
     }
     pkt = tmp;
     udp_snip = tmp->next;
-
     /* get and write protect until udp snip */
     while ((udp_snip != NULL) && (udp_snip->type != GNRC_NETTYPE_UDP)) {
         udp_snip = gnrc_pktbuf_start_write(udp_snip);
@@ -215,7 +208,6 @@ static void _send(gnrc_pktsnip_t *pkt)
     if (target_type == GNRC_NETTYPE_NETIF) {
         target_type = pkt->next->type;
     }
-
     /* and forward packet to the network layer */
     if (!gnrc_netapi_dispatch_send(target_type, GNRC_NETREG_DEMUX_CTX_ALL,
                                    pkt)) {
@@ -287,20 +279,19 @@ int gnrc_udp_calc_csum(gnrc_pktsnip_t *hdr, gnrc_pktsnip_t *pseudo_hdr)
 gnrc_pktsnip_t *gnrc_udp_hdr_build(gnrc_pktsnip_t *payload, uint16_t src,
                                    uint16_t dst)
 {
-    gnrc_pktsnip_t *res;
+    gnrc_pktsnip_t *pkt;
     udp_hdr_t *hdr;
 
     /* allocate header */
-    res = gnrc_pktbuf_add(payload, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UDP);
-    if (res == NULL) {
+    pkt = gnrc_pktbuf_add(payload, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UDP);
+    if (pkt == NULL) {
         return NULL;
     }
     /* initialize header */
-    hdr = (udp_hdr_t *)res->data;
+    hdr = (udp_hdr_t *)pkt->data;
     hdr->src_port = byteorder_htons(src);
     hdr->dst_port = byteorder_htons(dst);
-    hdr->checksum = byteorder_htons(0);
-    return res;
+    return pkt;
 }
 
 int gnrc_udp_init(void)

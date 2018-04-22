@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "byteorder.h"
 
@@ -82,6 +83,11 @@ char *ipv4_addr_to_str(char *result, const ipv4_addr_t *addr, uint8_t result_len
  * @return  NULL, if @p result or @p addr was NULL
  */
 ipv4_addr_t *ipv4_addr_from_str(ipv4_addr_t *result, const char *addr);
+
+static inline void ipv4_addr_set_unspecified(ipv4_addr_t *addr)
+{
+    memset(addr, 0, sizeof(ipv4_addr_t));
+}
 
 #ifdef __cplusplus
 }
