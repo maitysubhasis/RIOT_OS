@@ -124,6 +124,24 @@ void spi_release(spi_t bus)
     mutex_unlock(&locks[bus]);
 }
 
+void spi_writebyte(spi_t bus, uint8_t out) {
+    while (!(dev(bus)->SR & SSI_SR_TNF)) {} // when tx FIFO is full **wait**
+    dev(bus)->DR = out;
+    while ((dev(bus)->SR & SSI_SR_BSY)) {}
+    // while (!(dev(bus)->SR & SSI_SR_RNE)){}
+    uint32_t dummy = dev(bus)->DR;
+    (void) dummy;
+}
+
+uint8_t spi_readbyte(spi_t bus) {
+    while (!(dev(bus)->SR & SSI_SR_TNF)) {}
+    dev(bus)->DR = 0;
+    while (!(dev(bus)->SR & SSI_SR_RNE)){}
+    uint8_t ret = dev(bus)->DR;
+    while ((dev(bus)->SR & SSI_SR_BSY)) {}
+    return ret;
+}
+
 void spi_transfer_bytes(spi_t bus, spi_cs_t cs, bool cont,
                         const void *out, void *in, size_t len)
 {
@@ -133,33 +151,22 @@ void spi_transfer_bytes(spi_t bus, spi_cs_t cs, bool cont,
     assert(out_buf || in_buf);
 
     if (cs != SPI_CS_UNDEF) {
-        gpio_clear((gpio_t)cs);
+        gpio_clear((gpio_t)cs); // su: clear chip select
     }
 
+    // Transmit the data
     if (!in_buf) {
         for (size_t i = 0; i < len; i++) {
-            while (!(dev(bus)->SR & SSI_SR_TNF)) {}
-            dev(bus)->DR = out_buf[i];
-        }
-        /* flush RX FIFO while busy*/
-        while ((dev(bus)->SR & SSI_SR_BSY)) {
-            dev(bus)->DR;
+            spi_writebyte(bus, out_buf[i]);
         }
     }
-    else if (!out_buf) { /*TODO this case is currently untested */
-        size_t in_cnt = 0;
+    // Receive the data
+    else if (!out_buf) {
         for (size_t i = 0; i < len; i++) {
-            while (!(dev(bus)->SR & SSI_SR_TNF)) {}
-            dev(bus)->DR = 0;
-            if (dev(bus)->SR & SSI_SR_RNE) {
-                in_buf[in_cnt++] = dev(bus)->DR;
-            }
-        }
-        /* get remaining bytes */
-        while (dev(bus)->SR & SSI_SR_RNE) {
-            in_buf[in_cnt++] = dev(bus)->DR;
+            in_buf[i] = spi_readbyte(bus);
         }
     }
+    // first Transmit the data then Receive the data
     else {
         for (size_t i = 0; i < len; i++) {
             while (!(dev(bus)->SR & SSI_SR_TNF)) {}
@@ -167,8 +174,8 @@ void spi_transfer_bytes(spi_t bus, spi_cs_t cs, bool cont,
             while (!(dev(bus)->SR & SSI_SR_RNE)){}
             in_buf[i] = dev(bus)->DR;
         }
-    /* wait until no more busy */
-    while ((dev(bus)->SR & SSI_SR_BSY)) {}
+        /* wait until no more busy */
+        while ((dev(bus)->SR & SSI_SR_BSY)) {}
     }
 
     if ((!cont) && (cs != SPI_CS_UNDEF)) {

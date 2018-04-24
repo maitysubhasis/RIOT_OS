@@ -388,7 +388,7 @@ static void _netif_list_groups(ipv6_addr_t *addr)
 
 static void _netif_list(kernel_pid_t iface)
 {
-#ifdef MODULE_GNRC_IPV6
+#ifdef MODULE_GNRC_IPV4
 ipv4_addr_t ipv4_addrs[GNRC_NETIF_IPV4_ADDRS_NUMOF];
 #endif
 
@@ -1196,12 +1196,14 @@ static int _netif_del(kernel_pid_t iface, char *addr_str)
 #endif
 }
 
+#ifdef MODULE_GNRC_IPV4
 static int _netif_del_addr_4(kernel_pid_t iface, char *addr_str)
 {
     (void)iface;
     (void)addr_str;
     return 1;
 }
+#endif
 
 /* shell commands */
 #ifdef MODULE_GNRC_TXTSND
@@ -1380,6 +1382,7 @@ int _gnrc_netif_config(int argc, char **argv)
 }
 
 
+#ifdef MODULE_GNRC_IPV4
 static int _netif_set_addr_4(kernel_pid_t iface, char *addr_str)
 {
     // first cut the address and prefix 
@@ -1423,7 +1426,6 @@ static int _netif_set_addr_4(kernel_pid_t iface, char *addr_str)
         printf("error: unable to add IPv6 address\n");
         return 1;
     }
-
     // printf("success: set ");
     // _print_netopt(opt);
     // printf(" on interface %" PRIkernel_pid " to %s\n", iface, addr_str);
@@ -1489,3 +1491,4 @@ int _gnrc_netif_config_4(int argc, char **argv)
     ifconfig4_not_enough_parameter_msg();
     return 1;
 }
+#endif

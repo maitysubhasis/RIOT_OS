@@ -185,9 +185,13 @@ const shell_command_t _shell_command_list[] = {
 #ifdef MODULE_GNRC_IPV6_NIB
     {"nib", "Configure neighbor information base", _gnrc_ipv6_nib},
 #endif
+
+#ifdef MODULE_GNRC_IPV4
+    {"ifc", "Configure network interfaces", _gnrc_netif_config_4},
+#endif
+
 #ifdef MODULE_GNRC_NETIF
     {"ifconfig", "Configure network interfaces", _gnrc_netif_config},
-    {"ifc", "Configure network interfaces", _gnrc_netif_config_4},
 #ifdef MODULE_GNRC_TXTSND
     {"txtsnd", "Sends a custom string as is over the link layer", _gnrc_netif_send },
 #endif

@@ -1,5 +1,7 @@
 include ../Makefile.tests_common
 
+BOARD = openmote-cc2538
+
 BOARD_INSUFFICIENT_MEMORY := msb-430 msb-430h nucleo-f334 nucleo-l053 \
                              nucleo32-f031 nucleo32-f042 nucleo32-l031 \
                              stm32f0discovery telosb wsn430-v1_3b wsn430-v1_4 \
@@ -19,6 +21,13 @@ ifneq (,$(filter stm32f4discovery,$(BOARD)))
   ENC_CS  ?= GPIO_PIN\(PORT_B,12\)
   ENC_INT ?= GPIO_PIN\(PORT_B,11\)
   ENC_RST ?= GPIO_PIN\(PORT_B,10\)
+endif
+
+ifneq (,$(filter openmote-cc2538,$(BOARD)))
+  ENC_SPI ?= SPI_DEV\(0\)
+  ENC_CS  ?= GPIO_PIN\(0,3\) # chip select pin (GPIO) , done
+  ENC_INT ?= GPIO_PIN\(3,0\) # https://sourceforge.net/p/contiki/mailman/message/33525505/
+  ENC_RST ?= GPIO_PIN\(1,3\) # manually checked
 endif
 
 # fallback: set SPI bus and pins to default values
