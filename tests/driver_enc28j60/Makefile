@@ -7,6 +7,8 @@ BOARD_INSUFFICIENT_MEMORY := msb-430 msb-430h nucleo-f334 nucleo-l053 \
                              stm32f0discovery telosb wsn430-v1_3b wsn430-v1_4 \
                              z1
 
+CFLAGS += DGNRC_NETIF_NUMOF=2
+
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += enc28j60
 USEMODULE += gnrc_ipv6_router_default

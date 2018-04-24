@@ -74,6 +74,9 @@
 #define BUF_RX_START                (0)
 #define BUF_RX_END                  (BUF_TX_START - 2)
 
+#ifdef MODULE_NETSTATS_L2
+static uint8_t count;
+#endif
 
 static void switch_bank(enc28j60_t *dev, int8_t bank)
 {

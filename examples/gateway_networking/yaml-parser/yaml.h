@@ -122,7 +122,7 @@ int getValue(char ** cLine, char *keys, int keyCount, int pos, char * parentInde
 	// find the first key with indent parentIndent
 	// then recursive ly find the next key val
 	// when pos === keyCount return data pointer 
-	uint separatorPos;
+	uint8_t separatorPos;
 	int curLineLen;
 	char * cPos = *cLine;
 	char * endIndent;

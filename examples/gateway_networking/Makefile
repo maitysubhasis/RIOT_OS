@@ -2,7 +2,8 @@
 APPLICATION = gnrc_networking
 
 # If no BOARD is found in the environment, use this default:
-BOARD ?= native
+# BOARD ?= native
+BOARD ?= openmote-cc2538
 
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../..
@@ -12,6 +13,9 @@ BOARD_INSUFFICIENT_MEMORY := calliope-mini chronos microbit msb-430 msb-430h \
                              nucleo-f030 nucleo-f070 nucleo-f072 nucleo-f103 nucleo-f302 \
                              nucleo-f334 nucleo-l053 spark-core stm32f0discovery telosb \
                              wsn430-v1_3b wsn430-v1_4 z1
+
+# for ethernet and wireless interface
+CFLAGS += -DGNRC_NETIF_NUMOF=2
 
 # Include packages that pull up and auto-init the link layer.
 # NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present
@@ -36,6 +40,25 @@ USEMODULE += ps
 USEMODULE += netstats_l2
 USEMODULE += netstats_ipv6
 USEMODULE += netstats_rpl
+
+ifneq (,$(filter openmote-cc2538,$(BOARD)))
+  USEMODULE += enc28j60
+  
+  ENC_SPI ?= SPI_DEV\(0\)
+  ENC_CS  ?= GPIO_PIN\(0,3\) # chip select pin (GPIO) , done
+  ENC_INT ?= GPIO_PIN\(3,0\) # https://sourceforge.net/p/contiki/mailman/message/33525505/
+  ENC_RST ?= GPIO_PIN\(1,3\) # manually checked
+  
+  # export SPI and pins
+  CFLAGS += -DENC28J60_PARAM_SPI=$(ENC_SPI)
+  CFLAGS += -DENC28J60_PARAM_CS=$(ENC_CS)
+  CFLAGS += -DENC28J60_PARAM_INT=$(ENC_INT)
+  CFLAGS += -DENC28J60_PARAM_RESET=$(ENC_RST)
+endif
+
+
+# make sure we read the local enc28j60 params file
+CFLAGS += -I$(CURDIR)
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
